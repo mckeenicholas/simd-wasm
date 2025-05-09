@@ -1,8 +1,8 @@
-use crate::bx4::Bx4;
-use crate::i32x4::I32x4;
+use crate::wasm_simd::bx4::Bx4;
+use crate::wasm_simd::i32x4::I32x4;
 use crate::{
-    impl_debug, impl_vec_assign_op, impl_vec_binary_op, impl_vec_cmp, impl_vec_overload_op,
-    impl_vec_unary_op,
+    impl_debug, impl_default, impl_vec_assign_op, impl_vec_binary_op, impl_vec_cmp,
+    impl_vec_overload_op, impl_vec_unary_op,
 };
 use core::arch::wasm32::*;
 use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
@@ -10,10 +10,6 @@ use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssi
 pub struct F32x4(v128);
 
 impl F32x4 {
-    pub fn default() -> Self {
-        Self(f32x4(0.0, 0.0, 0.0, 0.0))
-    }
-
     pub fn new(v1: f32, v2: f32, v3: f32, v4: f32) -> Self {
         Self(f32x4(v1, v2, v3, v4))
     }
@@ -76,7 +72,7 @@ impl F32x4 {
         self.0 = new_vec;
     }
 
-    pub fn if_else(self, other: Self, mask: Bx4) -> Self {
+    pub fn if_else(self, other: &Self, mask: Bx4) -> Self {
         let data = v128_bitselect(self.0, other.0, mask.to_v128());
         Self(data)
     }
@@ -97,11 +93,15 @@ impl F32x4 {
     impl_vec_unary_op!(floor, f32x4_floor);
 }
 
+impl_default!(F32x4, f32);
+
 impl Clone for F32x4 {
     fn clone(&self) -> Self {
-        Self(self.0)
+        *self
     }
 }
+
+impl Copy for F32x4 {}
 
 impl From<I32x4> for F32x4 {
     fn from(value: I32x4) -> Self {
@@ -115,17 +115,16 @@ impl From<[f32; 4]> for F32x4 {
         Self::new(v1, v2, v3, v4)
     }
 }
-
-impl Into<[f32; 4]> for F32x4 {
-    fn into(self) -> [f32; 4] {
-        let (v1, v2, v3, v4) = self.extract_lanes();
+impl From<F32x4> for [f32; 4] {
+    fn from(val: F32x4) -> Self {
+        let (v1, v2, v3, v4) = val.extract_lanes();
         [v1, v2, v3, v4]
     }
 }
 
-impl Into<Vec<f32>> for F32x4 {
-    fn into(self) -> Vec<f32> {
-        let (v1, v2, v3, v4) = self.extract_lanes();
+impl From<F32x4> for Vec<f32> {
+    fn from(val: F32x4) -> Self {
+        let (v1, v2, v3, v4) = val.extract_lanes();
         vec![v1, v2, v3, v4]
     }
 }

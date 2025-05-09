@@ -3,6 +3,8 @@ use std::fmt::Debug;
 use std::ops::Not;
 use std::ops::{BitAnd, BitAndAssign, BitOr, BitOrAssign, BitXor, BitXorAssign};
 
+use crate::impl_default;
+
 const BIT_MASK_32: i32 = -1i32;
 
 pub struct Bx4(v128);
@@ -65,6 +67,16 @@ impl Bx4 {
         self.0
     }
 }
+
+impl_default!(Bx4, bool);
+
+impl Clone for Bx4 {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
+impl Copy for Bx4 {}
 
 impl BitAnd for Bx4 {
     type Output = Self;

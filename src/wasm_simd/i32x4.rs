@@ -1,8 +1,8 @@
-use crate::bx4::Bx4;
-use crate::f32x4::F32x4;
+use crate::wasm_simd::bx4::Bx4;
+use crate::wasm_simd::f32x4::F32x4;
 use crate::{
-    impl_debug, impl_vec_assign_op, impl_vec_binary_op, impl_vec_cmp, impl_vec_overload_op,
-    impl_vec_unary_op,
+    impl_debug, impl_default, impl_vec_assign_op, impl_vec_binary_op, impl_vec_cmp,
+    impl_vec_overload_op, impl_vec_unary_op,
 };
 use core::arch::wasm32::*;
 use std::ops::{
@@ -44,7 +44,7 @@ impl I32x4 {
         Self::new(f(v1), f(v2), f(v3), f(v4))
     }
 
-    pub fn reduce<F>(&self, f: F, init_val: i32) -> i32
+    pub fn fold<F>(&self, f: F, init_val: i32) -> i32
     where
         F: Fn(i32, i32) -> i32,
     {
@@ -53,19 +53,19 @@ impl I32x4 {
     }
 
     pub fn reduce_add(&self) -> i32 {
-        self.reduce(|a, b| a + b, 0)
+        self.fold(|a, b| a + b, 0)
     }
 
     pub fn reduce_mul(&self) -> i32 {
-        self.reduce(|a, b| a * b, 1)
+        self.fold(|a, b| a * b, 1)
     }
 
     pub fn reduce_min(&self) -> i32 {
-        self.reduce(|a, b| if a < b { a } else { b }, i32::MAX)
+        self.fold(|a, b| if a < b { a } else { b }, i32::MAX)
     }
 
     pub fn reduce_max(&self) -> i32 {
-        self.reduce(|a, b| if a > b { a } else { b }, i32::MIN)
+        self.fold(|a, b| if a > b { a } else { b }, i32::MIN)
     }
 
     pub fn extract_lanes(&self) -> (i32, i32, i32, i32) {
@@ -99,7 +99,7 @@ impl I32x4 {
         self.0 = new_vec;
     }
 
-    pub fn if_else(self, other: Self, mask: Bx4) -> Self {
+    pub fn if_else(&self, other: &Self, mask: &Bx4) -> Self {
         let data = v128_bitselect(self.0, other.0, mask.to_v128());
         Self(data)
     }
@@ -109,8 +109,8 @@ impl I32x4 {
     }
 
     pub fn shuffle<const I0: usize, const I1: usize, const I2: usize, const I3: usize>(
-        self,
-        other: Self,
+        &self,
+        other: &Self,
     ) -> Self {
         let data = i32x4_shuffle::<I0, I1, I2, I3>(self.0, other.0);
         Self(data)
@@ -129,22 +129,26 @@ impl I32x4 {
     impl_vec_unary_op!(abs, i32x4_abs);
 }
 
+impl_default!(I32x4, i32);
+
 impl Clone for I32x4 {
     fn clone(&self) -> Self {
-        Self(self.0)
+        *self
     }
 }
 
-impl Into<[i32; 4]> for I32x4 {
-    fn into(self) -> [i32; 4] {
-        let (v1, v2, v3, v4) = self.extract_lanes();
+impl Copy for I32x4 {}
+
+impl From<I32x4> for [i32; 4] {
+    fn from(val: I32x4) -> Self {
+        let (v1, v2, v3, v4) = val.extract_lanes();
         [v1, v2, v3, v4]
     }
 }
 
-impl Into<Vec<i32>> for I32x4 {
-    fn into(self) -> Vec<i32> {
-        let (v1, v2, v3, v4) = self.extract_lanes();
+impl From<I32x4> for Vec<i32> {
+    fn from(val: I32x4) -> Self {
+        let (v1, v2, v3, v4) = val.extract_lanes();
         vec![v1, v2, v3, v4]
     }
 }

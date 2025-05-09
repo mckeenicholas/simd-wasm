@@ -1,7 +1,8 @@
-use crate::bx4::Bx4;
-use crate::f32x4::F32x4;
+use crate::wasm_simd::bx4::Bx4;
+use crate::wasm_simd::f32x4::F32x4;
 use crate::{
-    impl_debug, impl_vec_assign_op, impl_vec_binary_op, impl_vec_cmp, impl_vec_overload_op,
+    impl_debug, impl_default, impl_vec_assign_op, impl_vec_binary_op, impl_vec_cmp,
+    impl_vec_overload_op,
 };
 use core::arch::wasm32::*;
 use std::ops::{
@@ -11,10 +12,6 @@ use std::ops::{
 pub struct U32x4(pub(crate) v128);
 
 impl U32x4 {
-    pub fn default() -> Self {
-        Self(u32x4(0, 0, 0, 0))
-    }
-
     pub fn new(v1: u32, v2: u32, v3: u32, v4: u32) -> Self {
         Self(u32x4(v1, v2, v3, v4))
     }
@@ -101,7 +98,7 @@ impl U32x4 {
         self.0 = new_vec;
     }
 
-    pub fn if_else(self, other: Self, mask: Bx4) -> Self {
+    pub fn if_else(self, other: &Self, mask: Bx4) -> Self {
         let data = v128_bitselect(self.0, other.0, mask.to_v128());
         Self(data)
     }
@@ -129,22 +126,26 @@ impl U32x4 {
     impl_vec_binary_op!(max, s_max, u32x4_max, u32);
 }
 
+impl_default!(U32x4, u32);
+
 impl Clone for U32x4 {
     fn clone(&self) -> Self {
-        Self(self.0)
+        *self
     }
 }
 
-impl Into<[u32; 4]> for U32x4 {
-    fn into(self) -> [u32; 4] {
-        let (v1, v2, v3, v4) = self.extract_lanes();
+impl Copy for U32x4 {}
+
+impl From<U32x4> for [u32; 4] {
+    fn from(val: U32x4) -> Self {
+        let (v1, v2, v3, v4) = val.extract_lanes();
         [v1, v2, v3, v4]
     }
 }
 
-impl Into<Vec<u32>> for U32x4 {
-    fn into(self) -> Vec<u32> {
-        let (v1, v2, v3, v4) = self.extract_lanes();
+impl From<U32x4> for Vec<u32> {
+    fn from(val: U32x4) -> Self {
+        let (v1, v2, v3, v4) = val.extract_lanes();
         vec![v1, v2, v3, v4]
     }
 }
