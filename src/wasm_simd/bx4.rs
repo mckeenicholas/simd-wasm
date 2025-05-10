@@ -118,6 +118,13 @@ impl BitAnd<Bx4> for bool {
     }
 }
 
+impl BitAndAssign<bool> for Bx4 {
+    fn bitand_assign(&mut self, other: bool) {
+        let other_splat = Bx4::splat(other);
+        self.0 = v128_and(self.0, other_splat.0);
+    }
+}
+
 impl BitOr for Bx4 {
     type Output = Self;
 
@@ -156,6 +163,13 @@ impl BitOr<Bx4> for bool {
     }
 }
 
+impl BitOrAssign<bool> for Bx4 {
+    fn bitor_assign(&mut self, other: bool) {
+        let other_splat = Bx4::splat(other);
+        self.0 = v128_or(self.0, other_splat.0);
+    }
+}
+
 impl BitXor for Bx4 {
     type Output = Self;
 
@@ -191,6 +205,13 @@ impl BitXor<Bx4> for bool {
             i32x4(self_val, self_val, self_val, self_val),
             other.0,
         ))
+    }
+}
+
+impl BitXorAssign<bool> for Bx4 {
+    fn bitxor_assign(&mut self, other: bool) {
+        let other_splat = Bx4::splat(other);
+        self.0 = v128_xor(self.0, other_splat.0);
     }
 }
 
